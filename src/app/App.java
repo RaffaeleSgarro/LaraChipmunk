@@ -17,14 +17,20 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
 import javax.mail.MessagingException;
-import java.io.File;
+import java.io.*;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class App extends Application {
 
     private static final Logger log = Logger.getLogger("app.App");
+
+    public static final String HOME_DIR = System.getProperty("user.home") + System.getProperty("file.separator") + ".lara-chipmunk";
+    public static final String CONF_FILE_NAME = "conf.properties";
+
+    private final Properties conf = new Properties();
 
     private final TextField host = new TextField();
     private final TextField port = new TextField();
@@ -45,8 +51,13 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        ensureConfFileExists();
+        InputStream in = new FileInputStream(new File(HOME_DIR, CONF_FILE_NAME));
+        conf.load(in);
+
         mainWindow = stage;
         VBox root = layout();
+        setValuesFrom(conf);
         setUpEventsHandling();
 
         Scene scene = new Scene(root);
@@ -55,6 +66,43 @@ public class App extends Application {
         stage.setWidth(700);
         stage.setHeight(600);
         stage.show();
+    }
+
+    private void setValuesFrom(Properties conf) {
+        host.setText(conf.getProperty("mail.smtp.host"));
+        port.setText(conf.getProperty("mail.smtp.port"));
+        user.setText(conf.getProperty("user"));
+        // password is not stored for security reasons
+        // TODO come back here after adding checkboxes
+        //mail.smtp.auth=true
+        //mail.smtp.starttls.enable=true
+    }
+
+    private void ensureConfFileExists() throws IOException {
+        File base = new File(HOME_DIR);
+
+        if (!base.exists()) {
+            if (!base.mkdirs()) {
+                throw new IOException("Could not create " + HOME_DIR);
+            }
+        }
+
+        File conf = new File(base, CONF_FILE_NAME);
+
+        if (!conf.exists()) {
+            InputStream in = getClass().getResourceAsStream("/default.properties");
+            Properties p = new Properties();
+            p.load(in);
+            in.close();
+            storeProperties(p);
+        }
+    }
+
+    private void storeProperties(Properties p) throws IOException {
+        // Use default platform encoding
+        FileWriter out = new FileWriter(new File(HOME_DIR, CONF_FILE_NAME));
+        p.store(out, "Edit this file to change app settings");
+        out.close();
     }
 
     private void setUpEventsHandling() {
@@ -97,6 +145,24 @@ public class App extends Application {
                 selectedFile.setText(current != null ? current.getAbsolutePath() : "Nessun file selezionato");
             }
         });
+
+        saveSettingsBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                conf.setProperty("user", user.getText());
+                // Password is not stored
+                conf.setProperty("mail.smtp.host", host.getText());
+                conf.setProperty("mail.smtp.port", port.getText());
+                // TODO come back here after adding checkboxes
+                //mail.smtp.auth=true
+                //mail.smtp.starttls.enable=true
+                try{
+                    storeProperties(conf);
+                } catch (IOException e) {
+                    log.log(Level.SEVERE, "Could not save config file", e);
+                }
+            }
+        });
     }
 
     private void showErrorDialog(String message) {
@@ -137,6 +203,9 @@ public class App extends Application {
         s.subject = subject.getText();
         s.message = message.getText();
         s.file = files.getSelectionModel().getSelectedItem();
+        // TODO add checkboxes
+        s.startTls = "true";
+        s.smtpAuth = "true";
         return s;
     }
 

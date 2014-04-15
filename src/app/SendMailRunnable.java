@@ -10,7 +10,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,11 +39,10 @@ public class SendMailRunnable implements Runnable {
     public void run() {
         try {
             Properties props = new Properties();
-            props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.starttls.enable", "true");
-            // TODO !!!
-            props.put("mail.smtp.host", "smtp.gmail.com");
-            props.put("mail.smtp.port", "587");
+            props.put("mail.smtp.auth", spec.smtpAuth);
+            props.put("mail.smtp.starttls.enable", spec.startTls);
+            props.put("mail.smtp.host", spec.host);
+            props.put("mail.smtp.port", spec.port);
 
             Session session = Session.getInstance(props, authenticator(spec));
 

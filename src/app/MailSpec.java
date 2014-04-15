@@ -12,5 +12,6 @@ public class MailSpec {
     public String subject;
     public String message;
     public File file;
-
+    public String smtpAuth ;
+    public String startTls;
 }
