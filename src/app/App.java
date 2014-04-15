@@ -1,6 +1,8 @@
 package app;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -30,6 +32,7 @@ public class App extends Application {
     private final TextField password = new PasswordField();
     private final Button setAttachmentsDirBtn = new Button("Scegli la directory che contiene gli allegati");
     private final ListView<File> files = new ListView<>();
+    private final Label selectedFile = new Label("Nessun file selezionato");
 
     private final TextField to = new TextField();
     private final TextField subject = new TextField();
@@ -47,8 +50,8 @@ public class App extends Application {
         Scene scene = new Scene(root);
         stage.setTitle("Invia i file per email");
         stage.setScene(scene);
-        stage.setWidth(600);
-        stage.setHeight(500);
+        stage.setWidth(700);
+        stage.setHeight(600);
         stage.show();
     }
 
@@ -83,6 +86,13 @@ public class App extends Application {
                     log.log(Level.SEVERE, "Could not send message", e);
                     showErrorDialog(e.getMessage());
                 }
+            }
+        });
+
+        files.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<File>() {
+            @Override
+            public void changed(ObservableValue<? extends File> observableValue, File old, File current) {
+                selectedFile.setText(current != null ? current.getAbsolutePath() : "Nessun file selezionato");
             }
         });
     }
@@ -165,6 +175,7 @@ public class App extends Application {
                 HBoxBuilder.create().children(host, port, user, password).build()
                 , setAttachmentsDirBtn
                 , files
+                , selectedFile
                 , subject
                 , message
                 , sendbar
