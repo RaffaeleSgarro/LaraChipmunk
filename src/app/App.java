@@ -159,7 +159,7 @@ public class App extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
                 MailSpec spec = getSnapshot();
-                spec.to = spec.user;
+                spec.to = spec.from;
                 spec.subject = "Test from Lara Chipmunk";
                 spec.message = "It works!";
                 sendMailSpec(spec);
