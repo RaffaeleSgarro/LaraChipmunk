@@ -79,6 +79,7 @@ public class App extends Application {
         // password is not stored for security reasons
         auth.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.auth")));
         startTls.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.starttls.enable")));
+        from.setText(conf.getProperty("from"));
     }
 
     private void ensureConfFileExists() throws IOException {
