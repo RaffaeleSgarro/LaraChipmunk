@@ -38,6 +38,8 @@ public class App extends Application {
     private final TextField subject = new TextField();
     private final Button sendBtn = new Button("Invia");
     private final TextArea message = new TextArea();
+    private final Button saveSettingsBtn = new Button("Salva");
+    private final Button testConnectionBtn = new Button("Test");
 
     private Stage mainWindow;
 
@@ -158,28 +160,37 @@ public class App extends Application {
 
         root.setSpacing(10);
 
-        HBox sendbar = new HBox();
-        sendbar.getChildren().setAll(to, sendBtn);
+        HBox settings = new HBox();
+        settings.setSpacing(10);
+        settings.setMaxWidth(Double.MAX_VALUE);
+        settings.getChildren().setAll(to, sendBtn);
         HBox.setHgrow(to, Priority.ALWAYS);
 
         host.setPromptText("Server");
         port.setPromptText("Porta");
         user.setPromptText("Utente");
         password.setPromptText("Password");
+        port.setPrefWidth(50);
 
         to.setPromptText("Destinatario");
         subject.setPromptText("Oggetto della mail");
         message.setPromptText("Corpo del testo");
 
         root.getChildren().setAll(
-                HBoxBuilder.create().children(host, port, user, password).build()
+                HBoxBuilder.create().children(host, port, user, password, testConnectionBtn, saveSettingsBtn)
+                        .prefWidth(Double.MAX_VALUE)
+                        .spacing(10)
+                        .build()
                 , setAttachmentsDirBtn
                 , files
                 , selectedFile
                 , subject
                 , message
-                , sendbar
+                , settings
         );
+
+        HBox.setHgrow(host, Priority.ALWAYS);
+        HBox.setHgrow(user, Priority.ALWAYS);
 
         files.setPrefHeight(100);
         message.setPrefHeight(60);
