@@ -18,6 +18,7 @@
         <element id="module-output" name="LaraChipmunk" />
       </element>
       <element id="library" level="project" name="mail" />
+      <element id="dir-copy" path="$PROJECT_DIR$/doc" />
     </root>
   </artifact>
 </component>
