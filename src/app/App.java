@@ -36,6 +36,11 @@ public class App extends Application {
     private final TextField port = new TextField();
     private final TextField user = new TextField();
     private final TextField password = new PasswordField();
+    private final CheckBox auth = new CheckBox("Auth");
+    private final CheckBox startTls = new CheckBox("Start TLS");
+    private final Button testConnectionBtn = new Button("Test");
+    private final Button saveSettingsBtn = new Button("Salva");
+
     private final Button setAttachmentsDirBtn = new Button("Scegli la directory che contiene gli allegati");
     private final ListView<File> files = new ListView<>();
     private final Label selectedFile = new Label("Nessun file selezionato");
@@ -44,8 +49,6 @@ public class App extends Application {
     private final TextField subject = new TextField();
     private final Button sendBtn = new Button("Invia");
     private final TextArea message = new TextArea();
-    private final Button saveSettingsBtn = new Button("Salva");
-    private final Button testConnectionBtn = new Button("Test");
 
     private Stage mainWindow;
 
@@ -73,9 +76,8 @@ public class App extends Application {
         port.setText(conf.getProperty("mail.smtp.port"));
         user.setText(conf.getProperty("user"));
         // password is not stored for security reasons
-        // TODO come back here after adding checkboxes
-        //mail.smtp.auth=true
-        //mail.smtp.starttls.enable=true
+        auth.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.auth")));
+        startTls.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.starttls.enable")));
     }
 
     private void ensureConfFileExists() throws IOException {
@@ -153,9 +155,8 @@ public class App extends Application {
                 // Password is not stored
                 conf.setProperty("mail.smtp.host", host.getText());
                 conf.setProperty("mail.smtp.port", port.getText());
-                // TODO come back here after adding checkboxes
-                //mail.smtp.auth=true
-                //mail.smtp.starttls.enable=true
+                conf.setProperty("mail.smtp.auth", Boolean.toString(auth.selectedProperty().get()));
+                conf.setProperty("mail.smtp.starttls.enable", Boolean.toString(startTls.selectedProperty().get()));
                 try{
                     storeProperties(conf);
                 } catch (IOException e) {
@@ -246,7 +247,7 @@ public class App extends Application {
         message.setPromptText("Corpo del testo");
 
         root.getChildren().setAll(
-                HBoxBuilder.create().children(host, port, user, password, testConnectionBtn, saveSettingsBtn)
+                HBoxBuilder.create().children(host, port, user, password, auth, startTls, testConnectionBtn, saveSettingsBtn)
                         .prefWidth(Double.MAX_VALUE)
                         .spacing(10)
                         .build()
@@ -259,7 +260,8 @@ public class App extends Application {
         );
 
         HBox.setHgrow(host, Priority.ALWAYS);
-        HBox.setHgrow(user, Priority.ALWAYS);
+        host.setPrefWidth(100);
+        password.setPrefWidth(100);
 
         files.setPrefHeight(100);
         message.setPrefHeight(60);
