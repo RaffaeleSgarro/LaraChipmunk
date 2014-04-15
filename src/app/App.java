@@ -45,6 +45,7 @@ public class App extends Application {
     private final ListView<File> files = new ListView<>();
     private final Label selectedFile = new Label("Nessun file selezionato");
 
+    private final TextField from = new TextField();
     private final TextField to = new TextField();
     private final TextField subject = new TextField();
     private final Button sendBtn = new Button("Invia");
@@ -139,6 +140,7 @@ public class App extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
                 conf.setProperty("user", user.getText());
+                conf.setProperty("from", from.getText());
                 // Password is not stored
                 conf.setProperty("mail.smtp.host", host.getText());
                 conf.setProperty("mail.smtp.port", port.getText());
@@ -214,6 +216,7 @@ public class App extends Application {
         s.port = port.getText();
         s.user = user.getText();
         s.password = password.getText();
+        s.from = from.getText();
         s.to = to.getText();
         s.subject = subject.getText();
         s.message = message.getText();
@@ -255,12 +258,14 @@ public class App extends Application {
         password.setPromptText("Password");
         port.setPrefWidth(50);
 
+        from.setPromptText("Da");
         to.setPromptText("Destinatario");
         subject.setPromptText("Oggetto della mail");
         message.setPromptText("Corpo del testo");
 
         root.getChildren().setAll(
-                HBoxBuilder.create().children(host, port, user, password, auth, startTls, testConnectionBtn, saveSettingsBtn)
+                  from
+                , HBoxBuilder.create().children(host, port, user, password, auth, startTls, testConnectionBtn, saveSettingsBtn)
                         .prefWidth(Double.MAX_VALUE)
                         .spacing(10)
                         .build()

@@ -48,7 +48,7 @@ public class SendMailRunnable implements Runnable {
 
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(spec.user));
+            message.setFrom(new InternetAddress(spec.from));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(spec.to));
             message.setSubject(spec.subject);
 
