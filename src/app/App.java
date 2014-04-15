@@ -124,20 +124,7 @@ public class App extends Application {
         sendBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                try {
-                    MailSpec spec = getSnapshot();
-                    validate(spec);
-                    MessagingConsole messagingConsole = new MessagingConsole();
-                    messagingConsole.clear();
-                    messagingConsole.show();
-                    send(spec, messagingConsole);
-                } catch (ValidationException e) {
-                    showInvalidDataDialog(e);
-                } catch (MessagingException e) {
-                    log.severe(e.getMessage());
-                    log.log(Level.SEVERE, "Could not send message", e);
-                    showErrorDialog(e.getMessage());
-                }
+                sendMailSpec(getSnapshot());
             }
         });
 
@@ -164,6 +151,33 @@ public class App extends Application {
                 }
             }
         });
+
+        testConnectionBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                MailSpec spec = getSnapshot();
+                spec.to = spec.user;
+                spec.subject = "Test from Lara Chipmunk";
+                spec.message = "It works!";
+                sendMailSpec(spec);
+            }
+        });
+    }
+
+    private void sendMailSpec(MailSpec spec) {
+        try {
+            validate(spec);
+            MessagingConsole messagingConsole = new MessagingConsole();
+            messagingConsole.clear();
+            messagingConsole.show();
+            send(spec, messagingConsole);
+        } catch (ValidationException e) {
+            showInvalidDataDialog(e);
+        } catch (MessagingException e) {
+            log.severe(e.getMessage());
+            log.log(Level.SEVERE, "Could not send message", e);
+            showErrorDialog(e.getMessage());
+        }
     }
 
     private void showErrorDialog(String message) {
@@ -204,9 +218,8 @@ public class App extends Application {
         s.subject = subject.getText();
         s.message = message.getText();
         s.file = files.getSelectionModel().getSelectedItem();
-        // TODO add checkboxes
-        s.startTls = "true";
-        s.smtpAuth = "true";
+        s.startTls = Boolean.toString(startTls.selectedProperty().get());
+        s.smtpAuth = Boolean.toString(auth.selectedProperty().get());
         return s;
     }
 

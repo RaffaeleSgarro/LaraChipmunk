@@ -56,15 +56,19 @@ public class SendMailRunnable implements Runnable {
             message.setContent(multipart);
 
             MimeBodyPart text = new MimeBodyPart();
-            MimeBodyPart attachment = new MimeBodyPart();
             multipart.addBodyPart(text);
-            multipart.addBodyPart(attachment);
-
             text.setText(spec.message, "UTF-8");
-            DataSource ds = new FileDataSource(spec.file);
-            attachment.setDataHandler(new DataHandler(ds));
-            attachment.setDisposition(Part.ATTACHMENT);
-            attachment.setFileName(spec.file.getName());
+
+            // This allow using the same code for sending the test message, which does
+            // not has a file. Not sure this is the best approach
+            if (spec.file != null) {
+                MimeBodyPart attachment = new MimeBodyPart();
+                multipart.addBodyPart(attachment);
+                DataSource ds = new FileDataSource(spec.file);
+                attachment.setDataHandler(new DataHandler(ds));
+                attachment.setDisposition(Part.ATTACHMENT);
+                attachment.setFileName(spec.file.getName());
+            }
 
             append("Invio in corso");
             append("Attendere...");
