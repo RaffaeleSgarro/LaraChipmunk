@@ -13,3 +13,8 @@ then there's a *Artifacts* section.
 
 See `doc/INSTALL.txt` for how to deploy and launch the application without an IDE
 
+Development
+===========
+
+Use the command line switch `--mock-mail` to avoid sending real messages
+

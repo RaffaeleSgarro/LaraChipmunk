@@ -52,12 +52,16 @@ public class App extends Application {
     private final TextArea message = new TextArea();
 
     private Stage mainWindow;
+    private boolean mockMailService;
 
     @Override
     public void start(Stage stage) throws Exception {
         ensureConfFileExists();
         InputStream in = new FileInputStream(new File(HOME_DIR, CONF_FILE_NAME));
         conf.load(in);
+        in.close();
+
+        mockMailService = getParameters().getUnnamed().contains("--mock-mail");
 
         mainWindow = stage;
         VBox root = layout();
@@ -228,8 +232,17 @@ public class App extends Application {
     }
 
     private void send(MailSpec src, MessagingConsole console) throws MessagingException {
-        SendMailRunnable r = new SendMailRunnable(src, console);
+        Runnable r;
+
+        if (mockMailService) {
+            r = new MockSendMailRunnable(src, console);
+        } else {
+            r = new SendMailRunnable(src, console);
+        }
+
         Thread t = new Thread(r);
+        t.setName("sendmail");
+        t.setDaemon(true);
         t.start();
     }
 
