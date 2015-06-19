@@ -127,7 +127,12 @@ public class App extends Application {
     }
 
     private void showDirContents(File dir) {
-        files.setItems(FXCollections.observableArrayList(dir.listFiles()));
+        files.setItems(FXCollections.observableArrayList(dir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isFile() && pathname.canRead();
+            }
+        })));
     }
 
     public static void main(String... args) {
