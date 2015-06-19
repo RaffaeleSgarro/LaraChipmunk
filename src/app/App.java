@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class App extends Application {
@@ -27,7 +28,7 @@ public class App extends Application {
 
     private final Properties conf = new Properties();
 
-    private final Button setAttachmentsDirBtn = new Button("Scegli la directory che contiene gli allegati");
+    private final Button setAttachmentsDirBtn = new Button("Scegli la directory che contiene gli attestati");
     private final ListView<File> files = new ListView<>();
 
     private Stage mainWindow;
@@ -45,13 +46,28 @@ public class App extends Application {
         mainWindow = stage;
         VBox root = layout();
         setUpEventsHandling();
+        showContentsOfLastWorkingDirectory();
 
         Scene scene = new Scene(root);
         stage.setTitle("Invia i file per email");
         stage.setScene(scene);
-        stage.setWidth(750);
-        stage.setHeight(500);
+        stage.setWidth(800);
+        stage.setHeight(600);
         stage.show();
+    }
+
+    private void showContentsOfLastWorkingDirectory() {
+        String lastWorkingDirectory = conf.getProperty("lastWorkingDirectory");
+        if (lastWorkingDirectory != null) {
+            try {
+                File dir = new File(lastWorkingDirectory);
+                if (dir.exists() && dir.isDirectory()) {
+                    showDirContents(dir);
+                }
+            } catch (Exception e) {
+                log.warning("Could not show content of last working directory: " + e.getMessage());
+            }
+        }
     }
 
     private void setUpEventsHandling() {
@@ -60,10 +76,12 @@ public class App extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
                 DirectoryChooser chooser = new DirectoryChooser();
-                chooser.setTitle("Scegli la directory");
+                chooser.setTitle("Scegli la directory con i documenti da inviare");
                 File dir = chooser.showDialog(mainWindow);
                 if (dir != null && dir.exists()) {
                     showDirContents(dir);
+                    setConfigurationProperty("lastWorkingDirectory", dir.getAbsolutePath());
+                    saveConfiguration();
                 }
             }
         });
@@ -101,7 +119,7 @@ public class App extends Application {
         }
     }
 
-    public void storeProperties(Properties p) throws IOException {
+    private void storeProperties(Properties p) throws IOException {
         // Use default platform encoding
         FileWriter out = new FileWriter(new File(HOME_DIR, CONF_FILE_NAME));
         p.store(out, "Edit this file to change app settings");
@@ -137,7 +155,19 @@ public class App extends Application {
         return mockMailService;
     }
 
-    public Properties getConfiguration() {
-        return conf;
+    public String getConfigurationProperty(String key) {
+        return conf.getProperty(key);
+    }
+
+    public void setConfigurationProperty(String key, String value) {
+        conf.setProperty(key, value);
+    }
+
+    public void saveConfiguration() {
+        try {
+            storeProperties(conf);
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Could not save config file", e);
+        }
     }
 }

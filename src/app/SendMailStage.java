@@ -13,8 +13,6 @@ import javafx.stage.Stage;
 
 import javax.mail.MessagingException;
 import java.io.File;
-import java.io.IOException;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,19 +64,14 @@ public class SendMailStage extends Stage {
         saveSettingsBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                Properties conf = app.getConfiguration();
-                conf.setProperty("user", user.getText());
-                conf.setProperty("from", from.getText());
+                app.setConfigurationProperty("user", user.getText());
+                app.setConfigurationProperty("from", from.getText());
                 // Password is not stored
-                conf.setProperty("mail.smtp.host", host.getText());
-                conf.setProperty("mail.smtp.port", port.getText());
-                conf.setProperty("mail.smtp.auth", Boolean.toString(auth.selectedProperty().get()));
-                conf.setProperty("mail.smtp.starttls.enable", Boolean.toString(startTls.selectedProperty().get()));
-                try {
-                    app.storeProperties(conf);
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Could not save config file", e);
-                }
+                app.setConfigurationProperty("mail.smtp.host", host.getText());
+                app.setConfigurationProperty("mail.smtp.port", port.getText());
+                app.setConfigurationProperty("mail.smtp.auth", Boolean.toString(auth.selectedProperty().get()));
+                app.setConfigurationProperty("mail.smtp.starttls.enable", Boolean.toString(startTls.selectedProperty().get()));
+                app.saveConfiguration();
             }
         });
 
@@ -95,7 +88,13 @@ public class SendMailStage extends Stage {
     }
 
     public void onBeforeShow() {
-        setValuesFrom(app.getConfiguration());
+        host.setText(app.getConfigurationProperty("mail.smtp.host"));
+        port.setText(app.getConfigurationProperty("mail.smtp.port"));
+        user.setText(app.getConfigurationProperty("user"));
+        // password is not stored for security reasons
+        auth.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.auth")));
+        startTls.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.starttls.enable")));
+        from.setText(app.getConfigurationProperty("from"));
     }
 
     private VBox layout() {
@@ -156,16 +155,6 @@ public class SendMailStage extends Stage {
             log.log(Level.SEVERE, "Could not send message", e);
             showErrorDialog(e.getMessage());
         }
-    }
-
-    private void setValuesFrom(Properties conf) {
-        host.setText(conf.getProperty("mail.smtp.host"));
-        port.setText(conf.getProperty("mail.smtp.port"));
-        user.setText(conf.getProperty("user"));
-        // password is not stored for security reasons
-        auth.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.auth")));
-        startTls.selectedProperty().setValue(Boolean.parseBoolean(conf.getProperty("mail.smtp.starttls.enable")));
-        from.setText(conf.getProperty("from"));
     }
 
     private void showErrorDialog(String message) {
