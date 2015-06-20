@@ -1,0 +1,8 @@
+<component name="libraryTable">
+  <library name="org.apache.lucene:lucene-analyzers:3.6.2" type="repository">
+    <properties maven-id="org.apache.lucene:lucene-analyzers:3.6.2" />
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
