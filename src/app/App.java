@@ -42,7 +42,7 @@ public class App extends Application {
     private ExecutorService executor;
     private Stage mainWindow;
     private boolean mockMailService;
-    private String lastUsedPassword;
+    private String SMTPPassword;
     private String lastUsedSubject;
     private String lastUsedMessageBody;
 
@@ -260,11 +260,6 @@ public class App extends Application {
     }
 
     public void scheduleEmail(final Email email) {
-        SMTPSettings settings = new SMTPSettings();
-        settings.loadFromConfiguration(this);
-        email.settings = settings;
-
-        lastUsedPassword = email.settings.password;
         lastUsedSubject = email.subject;
         lastUsedMessageBody = email.message;
 
@@ -273,16 +268,26 @@ public class App extends Application {
         executor.submit(new SendEmailJob(email));
     }
 
-    public String getLastUsedPassword() {
-        return lastUsedPassword;
-    }
-
     public String getLastUsedSubject() {
         return lastUsedSubject;
     }
 
     public String getLastUsedMessageBody() {
         return lastUsedMessageBody;
+    }
+
+    public Email prepareEmail() {
+        SMTPSettings settings = new SMTPSettings(this);
+        settings.refresh();
+        return new Email(settings);
+    }
+
+    public void setSMTPPassword(String SMTPPassword) {
+        this.SMTPPassword = SMTPPassword;
+    }
+
+    public String getSMTPPassword() {
+        return SMTPPassword;
     }
 
     private class SendEmailJob implements Runnable {

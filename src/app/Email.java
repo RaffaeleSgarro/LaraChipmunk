@@ -16,11 +16,16 @@ public class Email {
 
     private static final Logger log = Logger.getLogger(Email.class.getName());
 
-    public SMTPSettings settings;
+    private final SMTPSettings settings;
+
     public String to;
     public String subject;
     public String message;
     public File file;
+
+    public Email(SMTPSettings settings) {
+        this.settings = settings;
+    }
 
     public void send() throws MessagingException {
         Properties props = new Properties();

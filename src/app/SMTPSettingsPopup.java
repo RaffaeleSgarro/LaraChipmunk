@@ -73,14 +73,16 @@ public class SMTPSettingsPopup extends Stage {
         saveSettingsBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                app.setConfigurationProperty("user", user.getText());
-                app.setConfigurationProperty("from", from.getText());
-                // Password is not stored
-                app.setConfigurationProperty("mail.smtp.host", host.getText());
-                app.setConfigurationProperty("mail.smtp.port", port.getText());
-                app.setConfigurationProperty("mail.smtp.auth", Boolean.toString(auth.selectedProperty().get()));
-                app.setConfigurationProperty("mail.smtp.starttls.enable", Boolean.toString(startTls.selectedProperty().get()));
-                app.saveConfiguration();
+                SMTPSettings settings = new SMTPSettings(app);
+                settings.user = user.getText();
+                settings.from = from.getText();
+                settings.password = password.getText();
+                settings.host = host.getText();
+                settings.port = port.getText();
+                settings.smtpAuth = Boolean.toString(auth.selectedProperty().get());
+                settings.startTls = Boolean.toString(startTls.selectedProperty().get());
+                
+                settings.save();
 
                 close();
             }
@@ -95,8 +97,8 @@ public class SMTPSettingsPopup extends Stage {
     }
 
     public void onBeforeShow() {
-        SMTPSettings settings = new SMTPSettings();
-        settings.loadFromConfiguration(app);
+        SMTPSettings settings = new SMTPSettings(app);
+        settings.refresh();
 
         host.setText(settings.host);
         port.setText(settings.port);
@@ -104,7 +106,6 @@ public class SMTPSettingsPopup extends Stage {
         auth.selectedProperty().setValue(Boolean.parseBoolean(settings.smtpAuth));
         startTls.selectedProperty().setValue(Boolean.parseBoolean(settings.startTls));
         from.setText(settings.from);
-
         password.setText(settings.password);
     }
 
@@ -117,9 +118,8 @@ public class SMTPSettingsPopup extends Stage {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                Email email = new Email();
 
-                SMTPSettings settings = new SMTPSettings();
+                SMTPSettings settings = new SMTPSettings(app);
                 settings.host = host.getText();
                 settings.port = port.getText();
                 settings.user = user.getText();
@@ -128,7 +128,7 @@ public class SMTPSettingsPopup extends Stage {
                 settings.startTls = Boolean.toString(startTls.selectedProperty().get());
                 settings.smtpAuth = Boolean.toString(auth.selectedProperty().get());
 
-                email.settings = settings;
+                Email email = new Email(settings);
                 email.to = settings.from;
                 email.subject = "Test from Lara Chipmunk";
                 email.message = "It works!";

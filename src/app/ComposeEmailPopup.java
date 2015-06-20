@@ -94,7 +94,7 @@ public class ComposeEmailPopup extends Stage {
     }
 
     private Email prepareEmailMessage() {
-        Email email = new Email();
+        Email email = app.prepareEmail();
         email.file = attachmentFile;
         email.to = to.getText();
         email.subject = subject.getText();
