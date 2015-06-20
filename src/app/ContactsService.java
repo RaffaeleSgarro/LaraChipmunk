@@ -21,6 +21,7 @@ import org.apache.lucene.store.RAMDirectory;
 
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ContactsService {
@@ -64,6 +65,9 @@ public class ContactsService {
     }
 
     public List<Contact> search(String q) throws Exception {
+        if (q.length() < 2)
+            return Collections.emptyList();
+
         final String luceneQuery = q.endsWith("*") ? q : q + "*";
 
         QueryParser parser = new QueryParser("name", analyzer);
