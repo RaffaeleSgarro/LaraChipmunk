@@ -13,12 +13,11 @@ import javafx.stage.Stage;
 
 import javax.mail.MessagingException;
 import java.io.File;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SendMailStage extends Stage {
+public class ComposeEmailPopup extends Stage {
 
-    private static final Logger log = Logger.getLogger(SendMailStage.class.getName());
+    private static final Logger log = Logger.getLogger(ComposeEmailPopup.class.getName());
 
     private final App app;
     private final File attachmentFile;
@@ -29,7 +28,7 @@ public class SendMailStage extends Stage {
     private final TextField password = new PasswordField();
     private final CheckBox auth = new CheckBox("Auth");
     private final CheckBox startTls = new CheckBox("Start TLS");
-    private final Button testConnectionBtn = new Button("Test");
+    private final Button testOutgoingMailBtn = new Button("Test");
     private final Button saveSettingsBtn = new Button("Salva");
 
     private final TextField from = new TextField();
@@ -38,7 +37,7 @@ public class SendMailStage extends Stage {
     private final Button sendBtn = new Button("Invia");
     private final TextArea message = new TextArea();
 
-    public SendMailStage(App app, File attachmentFile) {
+    public ComposeEmailPopup(App app, File attachmentFile) {
         this.app = app;
         this.attachmentFile = attachmentFile;
 
@@ -57,7 +56,8 @@ public class SendMailStage extends Stage {
         sendBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                sendMailSpec(getSnapshot());
+                app.scheduleEmail(prepareEmailMessage());
+                close();
             }
         });
 
@@ -75,26 +75,51 @@ public class SendMailStage extends Stage {
             }
         });
 
-        testConnectionBtn.setOnAction(new EventHandler<ActionEvent>() {
+        testOutgoingMailBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                MailSpec spec = getSnapshot();
-                spec.to = spec.from;
-                spec.subject = "Test from Lara Chipmunk";
-                spec.message = "It works!";
-                sendMailSpec(spec);
+                sendTestEmail();
             }
         });
+    }
+
+    private void sendTestEmail() {
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Email email = prepareEmailMessage();
+                email.to = email.from;
+                email.subject = "Test from Lara Chipmunk";
+                email.message = "It works!";
+                Console console = new Console();
+                try {
+                    console.append("Sending message to test SMTP...");
+                    email.send();
+                    console.append("It works!");
+                } catch (MessagingException e) {
+                    console.append("ERROR: " + e.getMessage());
+                }
+            }
+        });
+
+        t.setDaemon(true);
+        t.setName("test-smtp");
+        t.start();
     }
 
     public void onBeforeShow() {
         host.setText(app.getConfigurationProperty("mail.smtp.host"));
         port.setText(app.getConfigurationProperty("mail.smtp.port"));
         user.setText(app.getConfigurationProperty("user"));
-        // password is not stored for security reasons
         auth.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.auth")));
         startTls.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.starttls.enable")));
         from.setText(app.getConfigurationProperty("from"));
+
+        password.setText(app.getLastUsedPassword());
+
+        subject.setText(app.getLastUsedSubject());
+        message.setText(app.getLastUsedMessageBody());
     }
 
     private VBox layout() {
@@ -122,7 +147,7 @@ public class SendMailStage extends Stage {
 
         root.getChildren().setAll(
                   from
-                , HBoxBuilder.create().children(host, port, user, password, auth, startTls, testConnectionBtn, saveSettingsBtn)
+                , HBoxBuilder.create().children(host, port, user, password, auth, startTls, testOutgoingMailBtn, saveSettingsBtn)
                         .prefWidth(Double.MAX_VALUE)
                         .spacing(10)
                         .build()
@@ -141,71 +166,19 @@ public class SendMailStage extends Stage {
         return root;
     }
 
-    private void sendMailSpec(MailSpec spec) {
-        try {
-            validate(spec);
-            MessagingConsole messagingConsole = new MessagingConsole();
-            messagingConsole.clear();
-            messagingConsole.show();
-            send(spec, messagingConsole);
-        } catch (ValidationException e) {
-            showInvalidDataDialog(e);
-        } catch (MessagingException e) {
-            log.severe(e.getMessage());
-            log.log(Level.SEVERE, "Could not send message", e);
-            showErrorDialog(e.getMessage());
-        }
-    }
-
-    private void showErrorDialog(String message) {
-        Dialog dialog = new Dialog();
-        dialog.setTitle("Errore");
-        dialog.setText(message);
-        dialog.show();
-    }
-
-    private void showInvalidDataDialog(ValidationException e) {
-        DialogWithLengthyText dialog = new DialogWithLengthyText();
-        dialog.setTitle("Errore");
-        dialog.setShortText(e.getMessage());
-        StringBuilder longText = new StringBuilder();
-        for (String msg : e.errors) longText.append(msg).append("\n");
-        dialog.setLongText(longText.toString());
-        dialog.show();
-    }
-
-    private void validate(MailSpec spec) throws ValidationException {
-        // TODO implement Just let it fail for now
-    }
-
-    private MailSpec getSnapshot() {
-        MailSpec s = new MailSpec();
-        s.file = attachmentFile;
-        s.host = host.getText();
-        s.port = port.getText();
-        s.user = user.getText();
-        s.password = password.getText();
-        s.from = from.getText();
-        s.to = to.getText();
-        s.subject = subject.getText();
-        s.message = message.getText();
-        s.startTls = Boolean.toString(startTls.selectedProperty().get());
-        s.smtpAuth = Boolean.toString(auth.selectedProperty().get());
-        return s;
-    }
-
-    private void send(MailSpec src, MessagingConsole console) throws MessagingException {
-        Runnable r;
-
-        if (app.isMockMailService()) {
-            r = new MockSendMailRunnable(src, console);
-        } else {
-            r = new SendMailRunnable(src, console);
-        }
-
-        Thread t = new Thread(r);
-        t.setName("sendmail");
-        t.setDaemon(true);
-        t.start();
+    private Email prepareEmailMessage() {
+        Email email = new Email();
+        email.file = attachmentFile;
+        email.host = host.getText();
+        email.port = port.getText();
+        email.user = user.getText();
+        email.password = password.getText();
+        email.from = from.getText();
+        email.to = to.getText();
+        email.subject = subject.getText();
+        email.message = message.getText();
+        email.startTls = Boolean.toString(startTls.selectedProperty().get());
+        email.smtpAuth = Boolean.toString(auth.selectedProperty().get());
+        return email;
     }
 }

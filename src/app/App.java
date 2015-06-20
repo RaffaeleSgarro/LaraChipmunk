@@ -1,21 +1,29 @@
 package app;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TitledPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,9 +38,16 @@ public class App extends Application {
 
     private final Button setAttachmentsDirBtn = new Button("Scegli la directory che contiene gli attestati");
     private final ListView<File> files = new ListView<>();
+    private final ListView<Email> scheduledEmails = new ListView<>();
+    private final ListView<FailedSendMailAttempt> failedEmails = new ListView<>();
+    private final ListView<Email> sentEmails = new ListView<>();
 
+    private ExecutorService executor;
     private Stage mainWindow;
     private boolean mockMailService;
+    private String lastUsedPassword;
+    private String lastUsedSubject;
+    private String lastUsedMessageBody;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -43,17 +58,26 @@ public class App extends Application {
 
         mockMailService = getParameters().getUnnamed().contains("--mock-mail");
 
+        executor = Executors.newSingleThreadExecutor();
+
         mainWindow = stage;
-        VBox root = layout();
+        BorderPane root = layout();
         setUpEventsHandling();
         showContentsOfLastWorkingDirectory();
 
         Scene scene = new Scene(root);
-        stage.setTitle("Invia i file per email");
+        stage.setTitle("LaraChipmunk");
         stage.setScene(scene);
         stage.setWidth(800);
         stage.setHeight(600);
         stage.show();
+
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                executor.shutdownNow();
+            }
+        });
     }
 
     private void showContentsOfLastWorkingDirectory() {
@@ -91,7 +115,7 @@ public class App extends Application {
             public void handle(MouseEvent event) {
                 if (event.getClickCount() == 2) {
                     File attachmentFile = files.selectionModelProperty().get().getSelectedItem();
-                    SendMailStage stage = new SendMailStage(App.this, attachmentFile);
+                    ComposeEmailPopup stage = new ComposeEmailPopup(App.this, attachmentFile);
                     stage.onBeforeShow();
                     stage.show();
                 }
@@ -139,19 +163,46 @@ public class App extends Application {
         launch(args);
     }
 
-    private VBox layout() {
-        VBox root = new VBox();
-        root.setPadding(new Insets(10));
+    private BorderPane layout() {
 
-        root.setSpacing(10);
+        BorderPane root = new BorderPane();
 
-        root.getChildren().setAll(
+        VBox filesLayout = new VBox();
+        root.setCenter(filesLayout);
+
+        Accordion operations = new Accordion();
+        root.setLeft(operations);
+
+        filesLayout.setPadding(new Insets(10));
+        filesLayout.setSpacing(10);
+        filesLayout.getChildren().setAll(
                 setAttachmentsDirBtn
                 , files
         );
 
         files.setPrefHeight(100);
         VBox.setVgrow(files, Priority.SOMETIMES);
+
+        EmailCellFactory emailCellFactory = new EmailCellFactory();
+
+        TitledPane scheduled = new TitledPane();
+        scheduled.textProperty().bind(Bindings.concat("In attesa", " ", "(", Bindings.size(scheduledEmails.getItems()), ")"));
+        scheduled.setContent(scheduledEmails);
+        scheduledEmails.setCellFactory(emailCellFactory);
+
+        TitledPane failed = new TitledPane();
+        failed.textProperty().bind(Bindings.concat("Errori", " ", "(", Bindings.size(failedEmails.getItems()), ")"));
+        failed.setContent(failedEmails);
+        failedEmails.setCellFactory(new FailedEmailCellFactory());
+
+        TitledPane sent = new TitledPane();
+        sent.textProperty().bind(Bindings.concat("Inviati", " ", "(", Bindings.size(sentEmails.getItems()), ")"));
+        sent.setContent(sentEmails);
+        sentEmails.setCellFactory(emailCellFactory);
+
+        operations.getPanes().addAll(scheduled, failed, sent);
+
+        operations.setExpandedPane(scheduled);
 
         return root;
     }
@@ -173,6 +224,71 @@ public class App extends Application {
             storeProperties(conf);
         } catch (IOException e) {
             log.log(Level.SEVERE, "Could not save config file", e);
+        }
+    }
+
+    public void scheduleEmail(final Email email) {
+        lastUsedPassword = email.password;
+        lastUsedSubject = email.subject;
+        lastUsedMessageBody = email.message;
+
+        scheduledEmails.getItems().add(email);
+
+        executor.submit(new SendEmailJob(email));
+    }
+
+    public String getLastUsedPassword() {
+        return lastUsedPassword;
+    }
+
+    public String getLastUsedSubject() {
+        return lastUsedSubject;
+    }
+
+    public String getLastUsedMessageBody() {
+        return lastUsedMessageBody;
+    }
+
+    private class SendEmailJob implements Runnable {
+
+        private final Email email;
+
+        public SendEmailJob(Email email) {
+            this.email = email;
+        }
+
+        @Override
+        public void run() {
+            try {
+
+                if (isMockMailService()) {
+                    Thread.sleep(5000);
+                } else {
+                    email.send();
+                }
+
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        sentEmails.getItems().add(email);
+                    }
+                });
+            } catch (final Exception e) {
+                log.severe(e.getMessage());
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        failedEmails.getItems().add(new FailedSendMailAttempt(e.getMessage(), email));
+                    }
+                });
+            } finally {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        scheduledEmails.getItems().remove(email);
+                    }
+                });
+            }
         }
     }
 }

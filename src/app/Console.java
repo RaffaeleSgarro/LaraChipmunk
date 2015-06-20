@@ -1,15 +1,16 @@
 package app;
 
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-public class MessagingConsole extends Stage {
+public class Console extends Stage {
 
     private ListView<String> messages;
 
-    public MessagingConsole() {
+    public Console() {
         setTitle("Log");
         setWidth(600);
         setHeight(300);
@@ -24,8 +25,13 @@ public class MessagingConsole extends Stage {
         messages.getItems().clear();
     }
 
-    public void appendLine(String line) {
-        messages.getItems().add(line);
+    public void append(final String line) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                messages.getItems().add(line);
+            }
+        });
     }
 
 }
