@@ -3,15 +3,16 @@ package app;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.HBoxBuilder;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import javax.mail.MessagingException;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -22,16 +23,8 @@ public class ComposeEmailPopup extends Stage {
     private final App app;
     private final File attachmentFile;
 
-    private final TextField host = new TextField();
-    private final TextField port = new TextField();
-    private final TextField user = new TextField();
-    private final TextField password = new PasswordField();
-    private final CheckBox auth = new CheckBox("Auth");
-    private final CheckBox startTls = new CheckBox("Start TLS");
-    private final Button testOutgoingMailBtn = new Button("Test");
-    private final Button saveSettingsBtn = new Button("Salva");
+    private final ContactsController contactsController = new ContactsController();
 
-    private final TextField from = new TextField();
     private final TextField to = new TextField();
     private final TextField subject = new TextField();
     private final Button sendBtn = new Button("Invia");
@@ -45,7 +38,7 @@ public class ComposeEmailPopup extends Stage {
 
         setUpEventsHandling();
 
-        setWidth(700);
+        setWidth(800);
         setHeight(450);
 
         setTitle("Compose: " + attachmentFile.getName());
@@ -60,106 +53,40 @@ public class ComposeEmailPopup extends Stage {
                 close();
             }
         });
-
-        saveSettingsBtn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                app.setConfigurationProperty("user", user.getText());
-                app.setConfigurationProperty("from", from.getText());
-                // Password is not stored
-                app.setConfigurationProperty("mail.smtp.host", host.getText());
-                app.setConfigurationProperty("mail.smtp.port", port.getText());
-                app.setConfigurationProperty("mail.smtp.auth", Boolean.toString(auth.selectedProperty().get()));
-                app.setConfigurationProperty("mail.smtp.starttls.enable", Boolean.toString(startTls.selectedProperty().get()));
-                app.saveConfiguration();
-            }
-        });
-
-        testOutgoingMailBtn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                sendTestEmail();
-            }
-        });
-    }
-
-    private void sendTestEmail() {
-
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Email email = prepareEmailMessage();
-                email.to = email.from;
-                email.subject = "Test from Lara Chipmunk";
-                email.message = "It works!";
-                Console console = new Console();
-                try {
-                    console.append("Sending message to test SMTP...");
-                    email.send();
-                    console.append("It works!");
-                } catch (MessagingException e) {
-                    console.append("ERROR: " + e.getMessage());
-                }
-            }
-        });
-
-        t.setDaemon(true);
-        t.setName("test-smtp");
-        t.start();
     }
 
     public void onBeforeShow() {
-        host.setText(app.getConfigurationProperty("mail.smtp.host"));
-        port.setText(app.getConfigurationProperty("mail.smtp.port"));
-        user.setText(app.getConfigurationProperty("user"));
-        auth.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.auth")));
-        startTls.selectedProperty().setValue(Boolean.parseBoolean(app.getConfigurationProperty("mail.smtp.starttls.enable")));
-        from.setText(app.getConfigurationProperty("from"));
-
-        password.setText(app.getLastUsedPassword());
-
         subject.setText(app.getLastUsedSubject());
         message.setText(app.getLastUsedMessageBody());
     }
 
-    private VBox layout() {
-        VBox root = new VBox();
-        root.setPadding(new Insets(10));
+    private BorderPane layout() {
+        BorderPane root = new BorderPane();
 
-        root.setSpacing(10);
+        // Contacts
+        root.setLeft(contactsController);
+        BorderPane.setMargin(contactsController, new Insets(10));
 
-        HBox settings = new HBox();
-        settings.setSpacing(10);
-        settings.setMaxWidth(Double.MAX_VALUE);
-        settings.getChildren().setAll(to, sendBtn);
-        HBox.setHgrow(to, Priority.ALWAYS);
+        // Compose
+        VBox compose = new VBox();
+        root.setCenter(compose);
+        BorderPane.setMargin(compose, new Insets(10));
+        compose.setSpacing(10);
 
-        host.setPromptText("Server");
-        port.setPromptText("Porta");
-        user.setPromptText("Utente");
-        password.setPromptText("Password");
-        port.setPrefWidth(50);
+        compose.getChildren().addAll(
+                to
+                , subject
+                , message
+        );
 
-        from.setPromptText("Da");
+        // Send
+        root.setBottom(sendBtn);
+        BorderPane.setMargin(sendBtn, new Insets(10));
+        BorderPane.setAlignment(sendBtn, Pos.BOTTOM_RIGHT);
+
         to.setPromptText("Destinatario");
         subject.setPromptText("Oggetto della mail");
         message.setPromptText("Corpo del testo");
-
-        root.getChildren().setAll(
-                  from
-                , HBoxBuilder.create().children(host, port, user, password, auth, startTls, testOutgoingMailBtn, saveSettingsBtn)
-                        .prefWidth(Double.MAX_VALUE)
-                        .spacing(10)
-                        .build()
-                , subject
-                , message
-                , settings
-        );
-
-        HBox.setHgrow(host, Priority.ALWAYS);
-        host.setPrefWidth(100);
-        password.setPrefWidth(100);
-
         message.setPrefHeight(60);
         VBox.setVgrow(message, Priority.SOMETIMES);
 
@@ -169,16 +96,10 @@ public class ComposeEmailPopup extends Stage {
     private Email prepareEmailMessage() {
         Email email = new Email();
         email.file = attachmentFile;
-        email.host = host.getText();
-        email.port = port.getText();
-        email.user = user.getText();
-        email.password = password.getText();
-        email.from = from.getText();
         email.to = to.getText();
         email.subject = subject.getText();
         email.message = message.getText();
-        email.startTls = Boolean.toString(startTls.selectedProperty().get());
-        email.smtpAuth = Boolean.toString(auth.selectedProperty().get());
+
         return email;
     }
 }

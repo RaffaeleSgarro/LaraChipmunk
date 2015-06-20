@@ -8,10 +8,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Accordion;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TitledPane;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
@@ -167,6 +164,9 @@ public class App extends Application {
 
         BorderPane root = new BorderPane();
 
+        MenuBar menuBar = menuBar();
+        root.setTop(menuBar);
+
         VBox filesLayout = new VBox();
         root.setCenter(filesLayout);
 
@@ -176,11 +176,12 @@ public class App extends Application {
         filesLayout.setPadding(new Insets(10));
         filesLayout.setSpacing(10);
         filesLayout.getChildren().setAll(
-                setAttachmentsDirBtn
+                  setAttachmentsDirBtn
                 , files
         );
 
         files.setPrefHeight(100);
+        setAttachmentsDirBtn.setPrefWidth(Double.MAX_VALUE);
         VBox.setVgrow(files, Priority.SOMETIMES);
 
         EmailCellFactory emailCellFactory = new EmailCellFactory();
@@ -207,6 +208,37 @@ public class App extends Application {
         return root;
     }
 
+    private MenuBar menuBar() {
+        MenuBar menuBar = new MenuBar();
+
+        Menu settingsMenu = new Menu("Impostazioni");
+
+        MenuItem smtpMenu = new MenuItem("Configura invio email");
+        smtpMenu.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SMTPSettingsPopup smtpSettingsPopup = new SMTPSettingsPopup(App.this);
+                smtpSettingsPopup.onBeforeShow();
+                smtpSettingsPopup.show();
+            }
+        });
+        settingsMenu.getItems().add(smtpMenu);
+
+        Menu contacts = new Menu("Contatti");
+
+        MenuItem loadContacts = new MenuItem("Carica da file CSV");
+        loadContacts.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                // TODO
+            }
+        });
+        contacts.getItems().addAll(loadContacts);
+        menuBar.getMenus().addAll(settingsMenu, contacts);
+
+        return menuBar;
+    }
+
     public boolean isMockMailService() {
         return mockMailService;
     }
@@ -228,7 +260,11 @@ public class App extends Application {
     }
 
     public void scheduleEmail(final Email email) {
-        lastUsedPassword = email.password;
+        SMTPSettings settings = new SMTPSettings();
+        settings.loadFromConfiguration(this);
+        email.settings = settings;
+
+        lastUsedPassword = email.settings.password;
         lastUsedSubject = email.subject;
         lastUsedMessageBody = email.message;
 
