@@ -147,13 +147,29 @@ public class App extends Application {
         out.close();
     }
 
-    private void showDirContents(File dir) {
-        files.setItems(FXCollections.observableArrayList(dir.listFiles(new FileFilter() {
+    private void showDirContents(final File dir) {
+        Thread thread = new Thread(new Runnable() {
             @Override
-            public boolean accept(File pathname) {
-                return pathname.isFile() && pathname.canRead();
+            public void run() {
+                final File[] fileList = dir.listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        return pathname.isFile() && pathname.canRead();
+                    }
+                });
+
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        files.setItems(FXCollections.observableArrayList(fileList));
+                    }
+                });
             }
-        })));
+        });
+
+        thread.setDaemon(true);
+        thread.start();
+
     }
 
     public static void main(String... args) {
