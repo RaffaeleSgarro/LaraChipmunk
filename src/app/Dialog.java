@@ -13,7 +13,7 @@ public class Dialog extends Stage {
         BorderPane root = new BorderPane();
         Scene scene = new Scene(root);
         msg = new Label();
-        root.getChildren().setAll(msg);
+        root.setCenter(msg);
         setScene(scene);
         setWidth(400);
         setHeight(300);

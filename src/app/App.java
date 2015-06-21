@@ -214,6 +214,16 @@ public class App extends Application {
         failed.textProperty().bind(Bindings.concat("Errori", " ", "(", Bindings.size(failedEmails.getItems()), ")"));
         failed.setContent(failedEmails);
         failedEmails.setCellFactory(new FailedEmailCellFactory());
+        failedEmails.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                if (event.getClickCount() == 2) {
+                    FailedSendMailAttempt attempt = failedEmails.getSelectionModel().getSelectedItem();
+                    showFailedEmailAttempt(attempt);
+                    failedEmails.getItems().remove(attempt);
+                }
+            }
+        });
 
         TitledPane sent = new TitledPane();
         sent.textProperty().bind(Bindings.concat("Inviati", " ", "(", Bindings.size(sentEmails.getItems()), ")"));
@@ -225,6 +235,17 @@ public class App extends Application {
         operations.setExpandedPane(scheduled);
 
         return root;
+    }
+
+    private void showFailedEmailAttempt(FailedSendMailAttempt attempt) {
+        ComposeEmailPopup composeEmailPopup = new ComposeEmailPopup(App.this, attempt.getEmail().file, contactsService);
+        composeEmailPopup.onBeforeShow();
+        composeEmailPopup.show();
+
+        Dialog dialog = new Dialog();
+        dialog.setTitle("Errore: " + attempt.getEmail().file.getName());
+        dialog.setText(attempt.getError());
+        dialog.show();
     }
 
     private MenuBar menuBar() {
@@ -363,11 +384,13 @@ public class App extends Application {
                     }
                 });
             } catch (final Exception e) {
-                log.severe(e.getMessage());
+                final String message = findRootMessage(e);
+                final String errorMessage = message != null ? message : "Controlla i log dell'applicazione";
+                log.log(Level.SEVERE, "Could not send email", e);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
-                        failedEmails.getItems().add(new FailedSendMailAttempt(e.getMessage(), email));
+                        failedEmails.getItems().add(new FailedSendMailAttempt(errorMessage, email));
                     }
                 });
             } finally {
@@ -379,5 +402,9 @@ public class App extends Application {
                 });
             }
         }
+    }
+
+    private String findRootMessage(Throwable error) {
+        return error.getCause() == null ? error.getMessage() : findRootMessage(error.getCause());
     }
 }

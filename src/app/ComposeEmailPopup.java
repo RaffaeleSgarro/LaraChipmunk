@@ -68,6 +68,12 @@ public class ComposeEmailPopup extends Stage {
         message.setText(app.getLastUsedMessageBody());
     }
 
+    public void onBeforeShow(FailedSendMailAttempt failedSendMailAttempt) {
+        to.setText(failedSendMailAttempt.getEmail().to);
+        subject.setText(failedSendMailAttempt.getEmail().subject);
+        message.setText(failedSendMailAttempt.getEmail().message);
+    }
+
     private BorderPane layout() {
         BorderPane root = new BorderPane();
 
