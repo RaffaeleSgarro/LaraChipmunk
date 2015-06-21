@@ -384,8 +384,8 @@ public class App extends Application {
                     }
                 });
             } catch (final Exception e) {
-                final String message = findRootMessage(e);
-                final String errorMessage = message != null ? message : "Controlla i log dell'applicazione";
+                Throwable root = findRootMessage(e);
+                final String errorMessage = root.getMessage() != null ? root.getMessage() : "Controlla i log dell'applicazione " + root.toString();
                 log.log(Level.SEVERE, "Could not send email", e);
                 Platform.runLater(new Runnable() {
                     @Override
@@ -404,7 +404,7 @@ public class App extends Application {
         }
     }
 
-    private String findRootMessage(Throwable error) {
-        return error.getCause() == null ? error.getMessage() : findRootMessage(error.getCause());
+    private Throwable findRootMessage(Throwable error) {
+        return error.getCause() == null ? error : findRootMessage(error);
     }
 }
