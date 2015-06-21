@@ -23,8 +23,10 @@ import java.io.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class App extends Application {
 
@@ -52,6 +54,12 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+
+        String logFilename = new File(HOME_DIR, "lara-chipmunk.log").getAbsolutePath();
+        FileHandler logFileHandler = new FileHandler(logFilename, true);
+        logFileHandler.setFormatter(new SimpleFormatter());
+        Logger.getLogger("app").addHandler(logFileHandler);
+
         ensureConfFileExists();
         InputStream in = new FileInputStream(new File(HOME_DIR, CONF_FILE_NAME));
         conf.load(in);
