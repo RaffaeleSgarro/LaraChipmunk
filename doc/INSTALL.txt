@@ -1,7 +1,0 @@
-INSTALL
-=======
-
-As long as we can neither run Ant nor get Intellij generate the right JNLP (the current one suffers from
-insufficient privileges), to deploy the application you need LaraChipmunk.jar and mail.jar.
-
-Double clicking on LaraChipmunk.jar should load the application if Java is properly set up.

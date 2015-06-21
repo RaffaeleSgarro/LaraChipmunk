@@ -1,24 +1,18 @@
 <component name="ArtifactManager">
-  <artifact type="javafx" name="LaraChipmunk">
+  <artifact name="LaraChipmunk">
     <output-path>$PROJECT_DIR$/out/artifacts/LaraChipmunk</output-path>
-    <properties id="javafx-properties">
-      <options>
-        <option name="appClass" value="app.App" />
-        <option name="description" value="" />
-        <option name="height" value="600" />
-        <option name="htmlParamFile" value="" />
-        <option name="paramFile" value="" />
-        <option name="title" value="Lara Chipmunk" />
-        <option name="vendor" value="" />
-        <option name="width" value="700" />
-      </options>
-    </properties>
     <root id="root">
-      <element id="archive" name="LaraChipmunk.jar">
-        <element id="module-output" name="LaraChipmunk" />
+      <element id="directory" name="lib">
+        <element id="archive" name="LaraChipmunk.jar">
+          <element id="module-output" name="LaraChipmunk" />
+        </element>
+        <element id="library" level="project" name="mail" />
+        <element id="library" level="project" name="org.apache.commons:commons-csv:1.1" />
+        <element id="library" level="project" name="org.apache.lucene:lucene-analyzers-common:5.2.0" />
+        <element id="library" level="project" name="org.apache.lucene:lucene-queryparser:5.2.0" />
       </element>
-      <element id="library" level="project" name="mail" />
-      <element id="dir-copy" path="$PROJECT_DIR$/doc" />
+      <element id="file-copy" path="$PROJECT_DIR$/README.md" />
+      <element id="dir-copy" path="$PROJECT_DIR$/dist" />
     </root>
   </artifact>
 </component>
