@@ -1,5 +1,7 @@
 package app;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -22,23 +24,24 @@ public class ComposeEmailPopup extends Stage {
 
     private final App app;
     private final File attachmentFile;
-
-    private final ContactsController contactsController = new ContactsController();
+    private final ContactsController contactsController;
 
     private final TextField to = new TextField();
     private final TextField subject = new TextField();
     private final Button sendBtn = new Button("Invia");
     private final TextArea message = new TextArea();
 
-    public ComposeEmailPopup(App app, File attachmentFile) {
+    public ComposeEmailPopup(App app, File attachmentFile, ContactsService contactsService) {
         this.app = app;
         this.attachmentFile = attachmentFile;
+
+        contactsController = new ContactsController(contactsService);
 
         setScene(new Scene(layout()));
 
         setUpEventsHandling();
 
-        setWidth(800);
+        setWidth(850);
         setHeight(450);
 
         setTitle("Compose: " + attachmentFile.getName());
@@ -49,10 +52,15 @@ public class ComposeEmailPopup extends Stage {
         sendBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                app.scheduleEmail(prepareEmailMessage());
-                close();
+                Email email = prepareEmailMessage();
+                schedule(email);
             }
         });
+    }
+
+    private void schedule(Email email) {
+        app.scheduleEmail(email);
+        close();
     }
 
     public void onBeforeShow() {
@@ -66,9 +74,10 @@ public class ComposeEmailPopup extends Stage {
         // Contacts
         root.setLeft(contactsController);
         BorderPane.setMargin(contactsController, new Insets(10));
+        contactsController.setPrefWidth(300);
 
         // Compose
-        VBox compose = new VBox();
+        final VBox compose = new VBox();
         root.setCenter(compose);
         BorderPane.setMargin(compose, new Insets(10));
         compose.setSpacing(10);
@@ -89,6 +98,24 @@ public class ComposeEmailPopup extends Stage {
         message.setPromptText("Corpo del testo");
         message.setPrefHeight(60);
         VBox.setVgrow(message, Priority.SOMETIMES);
+
+        contactsController.selectedContactProperty().addListener(new ChangeListener<Contact>() {
+            @Override
+            public void changed(ObservableValue<? extends Contact> observable, Contact oldValue, Contact newValue) {
+                if (newValue != null) {
+                    to.textProperty().setValue(newValue.getEmail());
+                }
+            }
+        });
+
+        contactsController.setOnContactDoubleClicked(new ContactsController.OnContactDoubleClicked() {
+            @Override
+            public void onContactDoubleClicked(Contact contact) {
+                Email email = prepareEmailMessage();
+                email.to = contact.getEmail();
+                schedule(email);
+            }
+        });
 
         return root;
     }

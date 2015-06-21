@@ -4,7 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.it.ItalianAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -41,7 +41,7 @@ public class ContactsService {
 
         CSVParser csv = new CSVParser(in, csvFormat);
 
-        analyzer = new ItalianAnalyzer();
+        analyzer = new StandardAnalyzer();
         indexDirectory = new RAMDirectory();
 
         IndexWriterConfig conf = new IndexWriterConfig(analyzer);
@@ -68,7 +68,7 @@ public class ContactsService {
         if (q.length() < 2)
             return Collections.emptyList();
 
-        final String luceneQuery = q.endsWith("*") ? q : q + "*";
+        final String luceneQuery = q.endsWith("*") || q.endsWith(" ") ? q : q + "*";
 
         QueryParser parser = new QueryParser("name", analyzer);
         Query query = parser.parse(luceneQuery);

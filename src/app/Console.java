@@ -34,4 +34,13 @@ public class Console extends Stage {
         });
     }
 
+    public void safeClose() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                close();
+            }
+        });
+    }
+
 }

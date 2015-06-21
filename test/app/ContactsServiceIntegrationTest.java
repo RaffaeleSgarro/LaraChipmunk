@@ -8,8 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
 public class ContactsServiceIntegrationTest {
 
@@ -31,24 +30,45 @@ public class ContactsServiceIntegrationTest {
     }
 
     @Test
-    public void gollumn() throws Exception {
+    public void gollumn_beginning() throws Exception {
         search("gol");
 
         shouldOnlyFind("Gollum");
     }
 
     @Test
-    public void montezemolo() throws Exception {
+    public void montezemolo_beginning() throws Exception {
         search("cor");
 
         shouldOnlyFind("Luca Cordero di Montezemolo");
     }
 
     @Test
-    public void bimbominkia() throws Exception {
+    public void montezemolo_fullTerm() throws Exception {
+        search("montezemolo");
+
+        shouldOnlyFind("Luca Cordero di Montezemolo");
+    }
+
+    @Test
+    public void bimbominkia_beginning() throws Exception {
         search("bim");
 
         shouldOnlyFind("BìmbòMìnkìà @_@");
+    }
+
+    @Test
+    public void alasia_fullTerm() throws Exception {
+        search("alasia");
+
+        shouldOnlyFind("Giuseppe Alasia");
+    }
+
+    @Test
+    public void alasia_withoutLastLetter() throws Exception {
+        search("alasi");
+
+        shouldOnlyFind("Giuseppe Alasia");
     }
 
     private void search(String query) throws Exception {
@@ -58,6 +78,7 @@ public class ContactsServiceIntegrationTest {
 
     private void shouldOnlyFind(String name) {
         assertNotNull(results, "Results should not be null. Did you call search()?");
+        assertFalse(results.isEmpty(), "Search for " + query + " didn't find anything! Expected one hit");
         assertEquals(results.size(), 1, "There should only be one search result for query " + query);
         assertEquals(results.get(0).getName(), name, "Query " + query + " returned the wrong record or there's a spelling error");
     }

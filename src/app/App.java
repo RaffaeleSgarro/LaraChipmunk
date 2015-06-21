@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -38,6 +39,8 @@ public class App extends Application {
     private final ListView<Email> scheduledEmails = new ListView<>();
     private final ListView<FailedSendMailAttempt> failedEmails = new ListView<>();
     private final ListView<Email> sentEmails = new ListView<>();
+
+    private final ContactsService contactsService = new ContactsService();
 
     private ExecutorService executor;
     private Stage mainWindow;
@@ -112,7 +115,7 @@ public class App extends Application {
             public void handle(MouseEvent event) {
                 if (event.getClickCount() == 2) {
                     File attachmentFile = files.selectionModelProperty().get().getSelectedItem();
-                    ComposeEmailPopup stage = new ComposeEmailPopup(App.this, attachmentFile);
+                    ComposeEmailPopup stage = new ComposeEmailPopup(App.this, attachmentFile, contactsService);
                     stage.onBeforeShow();
                     stage.show();
                 }
@@ -242,17 +245,46 @@ public class App extends Application {
 
         Menu contacts = new Menu("Contatti");
 
-        MenuItem loadContacts = new MenuItem("Carica da file CSV");
+        MenuItem loadContacts = new MenuItem("Carica da file CSV (name, email)");
         loadContacts.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                // TODO
+                onLoadContactsClicked();
             }
         });
         contacts.getItems().addAll(loadContacts);
         menuBar.getMenus().addAll(settingsMenu, contacts);
 
         return menuBar;
+    }
+
+    private void onLoadContactsClicked() {
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("."));
+        final File csv = fileChooser.showOpenDialog(mainWindow);
+
+        if (csv == null)
+            return;
+
+        final Console console = new Console();
+        console.show();
+        console.append("Carico i contatti...");
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    contactsService.createIndexFromCsv(new FileReader(csv));
+                    console.safeClose();
+                } catch (Exception e) {
+                    console.append("ERROR: " + e.getMessage());
+                }
+            }
+        });
+
+        t.setDaemon(true);
+        t.start();
     }
 
     public boolean isMockMailService() {
