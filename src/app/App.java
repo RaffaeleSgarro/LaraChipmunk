@@ -9,6 +9,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
@@ -78,6 +79,8 @@ public class App extends Application {
                 executor.shutdownNow();
             }
         });
+
+        stage.getIcons().add(new Image(App.class.getResource("/icon_128.png").toString()));
     }
 
     private void showContentsOfLastWorkingDirectory() {
