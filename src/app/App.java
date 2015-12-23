@@ -45,6 +45,8 @@ public class App extends Application {
 
     private final ContactsService contactsService = new ContactsService();
 
+    private File home;
+    private File confFile;
     private ExecutorService executor;
     private Stage mainWindow;
     private boolean mockMailService;
@@ -54,15 +56,31 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        home = new File(HOME_DIR);
+        if (!home.exists()) {
+            boolean result = home.mkdirs();
+            if (!result) {
+                throw new RuntimeException("Could not create HOME directory " + home.getAbsolutePath());
+            }
+        }
 
-        String logFilename = new File(HOME_DIR, "lara-chipmunk.log").getAbsolutePath();
+        String logFilename = resolve("lara-chipmunk.log").getAbsolutePath();
         FileHandler logFileHandler = new FileHandler(logFilename, true);
         logFileHandler.setFormatter(new SimpleFormatter());
         Logger.getLogger("app").addHandler(logFileHandler);
 
-        ensureConfFileExists();
-        InputStream in = new FileInputStream(new File(HOME_DIR, CONF_FILE_NAME));
-        conf.load(in);
+        confFile = resolve(CONF_FILE_NAME);
+
+        if (!confFile.exists()) {
+            InputStream in = getClass().getResourceAsStream("/default.properties");
+            Properties p = new Properties();
+            p.load(in);
+            in.close();
+            storeProperties(p);
+        }
+
+        InputStream in = new FileInputStream(confFile);
+        this.conf.load(in);
         in.close();
 
         mockMailService = getParameters().getUnnamed().contains("--mock-mail");
@@ -89,6 +107,10 @@ public class App extends Application {
         });
 
         stage.getIcons().add(new Image(App.class.getResource("/icon_128.png").toString()));
+    }
+
+    private File resolve(String filename) {
+        return new File(home, filename);
     }
 
     private void showContentsOfLastWorkingDirectory() {
@@ -134,29 +156,9 @@ public class App extends Application {
         });
     }
 
-    private void ensureConfFileExists() throws IOException {
-        File base = new File(HOME_DIR);
-
-        if (!base.exists()) {
-            if (!base.mkdirs()) {
-                throw new IOException("Could not create " + HOME_DIR);
-            }
-        }
-
-        File conf = new File(base, CONF_FILE_NAME);
-
-        if (!conf.exists()) {
-            InputStream in = getClass().getResourceAsStream("/default.properties");
-            Properties p = new Properties();
-            p.load(in);
-            in.close();
-            storeProperties(p);
-        }
-    }
-
     private void storeProperties(Properties p) throws IOException {
         // Use default platform encoding
-        FileWriter out = new FileWriter(new File(HOME_DIR, CONF_FILE_NAME));
+        FileWriter out = new FileWriter(confFile);
         p.store(out, "Edit this file to change app settings");
         out.close();
     }
