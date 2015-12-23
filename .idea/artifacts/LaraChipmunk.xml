@@ -10,9 +10,12 @@
         <element id="library" level="project" name="org.apache.commons:commons-csv:1.1" />
         <element id="library" level="project" name="org.apache.lucene:lucene-analyzers-common:5.2.0" />
         <element id="library" level="project" name="org.apache.lucene:lucene-queryparser:5.2.0" />
+        <element id="library" level="project" name="poi-3.13-20150929" />
+        <element id="library" level="project" name="poi-ooxml-3.13-20150929" />
       </element>
       <element id="file-copy" path="$PROJECT_DIR$/README.md" />
       <element id="dir-copy" path="$PROJECT_DIR$/dist" />
+      <element id="file-copy" path="$PROJECT_DIR$/RELEASE" />
     </root>
   </artifact>
 </component>
