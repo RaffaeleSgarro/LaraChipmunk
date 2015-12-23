@@ -2,20 +2,25 @@
   <artifact name="LaraChipmunk">
     <output-path>$PROJECT_DIR$/out/artifacts/LaraChipmunk</output-path>
     <root id="root">
-      <element id="directory" name="lib">
-        <element id="archive" name="LaraChipmunk.jar">
-          <element id="module-output" name="LaraChipmunk" />
+      <element id="directory" name="LaraChipmunk">
+        <element id="directory" name="lib">
+          <element id="archive" name="LaraChipmunk.jar">
+            <element id="module-output" name="LaraChipmunk" />
+          </element>
+          <element id="library" level="project" name="mail" />
+          <element id="library" level="project" name="org.apache.commons:commons-csv:1.1" />
+          <element id="library" level="project" name="org.apache.lucene:lucene-analyzers-common:5.2.0" />
+          <element id="library" level="project" name="org.apache.lucene:lucene-queryparser:5.2.0" />
+          <element id="library" level="project" name="poi-3.13-20150929" />
+          <element id="library" level="project" name="poi-ooxml-3.13-20150929" />
+          <element id="library" level="project" name="poi-excelant-3.13-20150929" />
+          <element id="library" level="project" name="poi-ooxml-schemas-3.13-20150929" />
+          <element id="library" level="project" name="xmlbeans-2.6.0" />
         </element>
-        <element id="library" level="project" name="mail" />
-        <element id="library" level="project" name="org.apache.commons:commons-csv:1.1" />
-        <element id="library" level="project" name="org.apache.lucene:lucene-analyzers-common:5.2.0" />
-        <element id="library" level="project" name="org.apache.lucene:lucene-queryparser:5.2.0" />
-        <element id="library" level="project" name="poi-3.13-20150929" />
-        <element id="library" level="project" name="poi-ooxml-3.13-20150929" />
+        <element id="file-copy" path="$PROJECT_DIR$/README.md" />
+        <element id="file-copy" path="$PROJECT_DIR$/RELEASE" />
+        <element id="dir-copy" path="$PROJECT_DIR$/dist" />
       </element>
-      <element id="file-copy" path="$PROJECT_DIR$/README.md" />
-      <element id="dir-copy" path="$PROJECT_DIR$/dist" />
-      <element id="file-copy" path="$PROJECT_DIR$/RELEASE" />
     </root>
   </artifact>
 </component>
