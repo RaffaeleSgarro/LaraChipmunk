@@ -18,6 +18,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.*;
 import java.util.Properties;
@@ -277,28 +278,49 @@ public class App extends Application {
         });
         settingsMenu.getItems().add(smtpMenu);
 
-        Menu contacts = new Menu("Contatti");
+        final Menu contacts = new Menu("Contatti");
 
-        MenuItem loadContacts = new MenuItem("Carica da file CSV (name, email)");
-        loadContacts.setOnAction(new EventHandler<ActionEvent>() {
+        MenuItem loadCsv = new MenuItem("Carica da file CSV (prima riga: name, email)");
+        loadCsv.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                onLoadContactsClicked();
+                onLoadContactsClicked(new LoadContactsTask() {
+                    @Override
+                    public void loadContacts(File file) throws Exception {
+                        contactsService.createIndexFromCsv(new FileReader(file));
+                    }
+                });
             }
         });
-        contacts.getItems().addAll(loadContacts);
+
+        MenuItem loadExcel = new MenuItem("Carica da file Excel (prima riga: nome, cognome, email)");
+        loadExcel.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                onLoadContactsClicked(new LoadContactsTask() {
+                    @Override
+                    public void loadContacts(File file) throws Exception {
+                        contactsService.createIndexFromWorkbook(WorkbookFactory.create(file));
+                    }
+                });
+            }
+        });
+
+        contacts.getItems().addAll(loadCsv, loadExcel);
+
+
         menuBar.getMenus().addAll(settingsMenu, contacts);
 
         return menuBar;
     }
 
-    private void onLoadContactsClicked() {
+    private void onLoadContactsClicked(final LoadContactsTask task) {
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(new File("."));
-        final File csv = fileChooser.showOpenDialog(mainWindow);
+        final File file = fileChooser.showOpenDialog(mainWindow);
 
-        if (csv == null)
+        if (file == null)
             return;
 
         final Console console = new Console();
@@ -306,10 +328,9 @@ public class App extends Application {
         console.append("Carico i contatti...");
 
         Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 try {
-                    contactsService.createIndexFromCsv(new FileReader(csv));
+                    task.loadContacts(file);
                     console.safeClose();
                 } catch (Exception e) {
                     console.append("ERROR: " + e.getMessage());
@@ -319,6 +340,10 @@ public class App extends Application {
 
         t.setDaemon(true);
         t.start();
+    }
+
+    private interface LoadContactsTask {
+        void loadContacts(File file) throws Exception;
     }
 
     public boolean isMockMailService() {
